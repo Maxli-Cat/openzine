@@ -1,4 +1,4 @@
-from PIL import Image, ImageDraw
+from PIL import Image, ImageDraw, ImageFont
 import math
 import os
 
@@ -13,11 +13,13 @@ RELATIVE = True
 CUT_LINES = True
 CREASE_LINES = False
 LINE_COLOR = (100,100,100)
+PAGE_NUMBERS = True
+PAGE_NUMBER_COLOR = (255,0,0)
 
 ### END CONFIG SECTION
 
-SHEET_WIDTH = PAPER_WIDTH * DPI
-SHEET_HEIGHT = PAPER_HEIGHT * DPI
+SHEET_WIDTH = int(PAPER_WIDTH * DPI)
+SHEET_HEIGHT = int(PAPER_HEIGHT * DPI)
 
 PAGE_WIDTH = SHEET_WIDTH // 2
 PAGE_HEIGHT = SHEET_HEIGHT // ROWS
@@ -40,7 +42,21 @@ if __name__ == "__main__":
         Image.open(i).convert('RGBA').resize((PAGE_WIDTH, PAGE_HEIGHT)) for i in inputs
     ]
 
+    if PAGE_NUMBERS:
+        font = ImageFont.load_default(50)
+        for i, page in enumerate(pages):
+            draw = ImageDraw.Draw(page)
+            if i % 2 == 0:
+                draw.text((PAGE_WIDTH-200, PAGE_HEIGHT - 85), f"Page {i}", fill=PAGE_NUMBER_COLOR, font=font)
+            else:
+                draw.text((75, PAGE_HEIGHT - 85), f"Page {i}", fill=PAGE_NUMBER_COLOR, font=font)
+
+
+
     pages[0].save("foronline.pdf", save_all=True, append_images=pages[1:])
+
+    if len(pages) % (ROWS * 4) > 0:
+        print(f"Warning: adding {(ROWS * 4) - (len(pages) % (ROWS * 4))} pages of padding")
 
     while len(pages) % (ROWS * 4) != 0:
         pages.append(Image.new('RGBA', (PAGE_WIDTH, PAGE_HEIGHT), color='white'))
@@ -73,10 +89,13 @@ if __name__ == "__main__":
             bcanvas = ImageDraw.Draw(back)
             if CUT_LINES:
                 for i in range(ROWS):
+                    fcanvas.line((0, PAGE_HEIGHT*i, SHEET_WIDTH, PAGE_HEIGHT*i), 'white', width=60)
+                    bcanvas.line((0, PAGE_HEIGHT*i, SHEET_WIDTH, PAGE_HEIGHT*i), 'white', width=60)
                     fcanvas.line((0, PAGE_HEIGHT*i, SHEET_WIDTH, PAGE_HEIGHT*i), LINE_COLOR)
                     bcanvas.line((0, PAGE_HEIGHT*i, SHEET_WIDTH, PAGE_HEIGHT*i), LINE_COLOR)
             if CREASE_LINES:
                 fcanvas.line((SHEET_WIDTH // 2, 0, SHEET_WIDTH // 2, SHEET_HEIGHT), LINE_COLOR)
+                bcanvas.line((SHEET_WIDTH // 2, 0, SHEET_WIDTH // 2, SHEET_HEIGHT), LINE_COLOR)
 
 
         sheets.append(front)
